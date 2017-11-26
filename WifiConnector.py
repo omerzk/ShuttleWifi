@@ -25,7 +25,7 @@ class ShuttleWiFiConnector:
         cells = Cell.where(INTERFACE, ssidFilter)
 
         if not cells:
-            print("No", ssid, "network detected") #TODO: write to logfile
+            print("No", ssid, "network detected") #TODO: write prints logfile
             return None
 
         return max(cells, key=lambda cell: cell.quality)
@@ -34,7 +34,9 @@ class ShuttleWiFiConnector:
         schema = Scheme.for_cell(INTERFACE, SUTTLE_SSID, cell, password)
         try:
             schema.activate()
-        except exceptions.ConnectionError:
+        except exceptions.ConnectionError as e:
+            print("Failed to connect to", SHUTTLE_PASSWORDS, "with password", password)
+            print(e)
             return False
 
         self.MACToPassword[cell.address] = password
