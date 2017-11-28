@@ -21,10 +21,21 @@ SECONDS_TO_CONNECTION = 10
 PING_AMOUNT = '1'
 
 
+# Static functions
 def init_shuttle_logger(logpath):
     logging.basicConfig(filename=logpath, filemode='a', level=logging.DEBUG, format='%(asctime)s %(message)s - ')
     logger = logging.getLogger(__name__)
     return logger
+
+
+def is_connected(logger):
+    ping = subprocess.Popen(["ping", GOOGLE_DNS_SERVER_IP, "-c", PING_AMOUNT], stdout=subprocess.PIPE)
+
+    if ping.wait() == 0:
+        logger.info("Ping success, connected to network")
+        return True
+    logger.error("Ping failed, failed to connect. Ping output" + ping.stdout.read())  # TODO: not exactly an error
+    return False
 
 
 """Get strongest signal cell of the requested SSID"""
@@ -63,14 +74,10 @@ class ShuttleWiFiConnector:
         self.logger.info("Finished Restarting interface with networks params")
 
         sleep(SECONDS_TO_CONNECTION)
-
-        ping = subprocess.Popen(["ping", GOOGLE_DNS_SERVER_IP, "-c", PING_AMOUNT], stdout=subprocess.PIPE)
-
-        if ping.wait() == 0:
+        if is_connected():
             self.MACToPassword[cell.address] = password
-            self.logger("Ping success, connected to network")
             return True
-        self.logger("Ping failed, failed to connect. Ping output" + ping.stdout.read())
+
         return False
 
     def try_connect_shuttle(self):
