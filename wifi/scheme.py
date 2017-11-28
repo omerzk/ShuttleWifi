@@ -162,7 +162,7 @@ class Scheme(object):
         args = list(itertools.chain.from_iterable(
             ('-o', '{k}={v}'.format(k=k, v=v)) for k, v in self.options.items()))
 
-        return args
+        return [self.interface] + args
 
     def activate(self):
         """
