@@ -3,9 +3,9 @@ from __future__ import with_statement
 import requests
 from urlparse import urljoin
 import json
-import serial
+from serial import Serial
 import pynmea2
-import time
+from time import sleep
 import sys
 import signal
 import logging
@@ -25,11 +25,10 @@ BEACONID = "8fc0537f-3fd3-4713-871f-5fa4b1850f97"
 LOCATION_MSGS = ["GGA", "RMC"]
 HEADERS = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 IGNORE = "ignore"  # TODO why?
-VALID_BEACON_STATUS = [set(dict()), set(["name", "beaconId"])]
+VALID_BEACON_STATUS = [set(dict()), {"name", "beaconId"}]
 LOGPATH = "/var/log/gps.log"
 NUM_TRIES_TO_FAIL = 4
 
-# LOGPATH = r"c:\temp\gps\log.log"
 
 def init_logger(logpath):
     logging.basicConfig(filename=logpath, filemode='a', level=logging.DEBUG, format='%(asctime)s %(message)s - ')
@@ -82,19 +81,21 @@ def remove_beacon(beaconid):
     # TODO: insert the try and except into while with some sleeping, because sometimes the server refuse the connection
     # and we need to try harder to rem
     data = {"beaconId": beaconid}
+
     try:
         logging.info("trying to remove beacon")
         r = requests.post(urljoin(URL, REMOVE), data=json.dumps(data), headers=HEADERS)
     except:
         logging.exception("error during a try to remove the active beacon")
         raise
+
     return r
 
 
 def get_location_msg():
     try:
         logging.info("connecting to serial device: %s" % DEVICE)
-        serial_device = serial.Serial(DEVICE)
+        serial_device = Serial(DEVICE)
     except:
         logging.exception("error in opening the serial device")
         raise
@@ -190,7 +191,7 @@ def main():
                 # if the beacon is not me, wait 20 sec
                 if cur_status["beaconId"] != BEACONID:
                     logging.info("beacon is already taken by: %s, sleeping for 20 sec" % cur_status["beaconId"])
-                    time.sleep(20)
+                    sleep(20)
                     # to decide
                     continue
                 logging.info("I'm already the beacon, continuing")
@@ -200,15 +201,17 @@ def main():
 
             logging.info("sleeping for 7 seconds")
             # TODO: change this number to CONST and format it into the logging message above
-            time.sleep(7)
+            sleep(7)
         except Exception, e:
             print e
             tries += 1
 
+            logging.exception("got exception in main for the %d time" % tries)
+
+            #TODO: avoid excess calls using exception type
             if not WifiConnector.is_connected(logger):
                 connect_to_wifi()
 
-            logging.exception("got exception in main for the %d time" % tries)
             if tries == NUM_TRIES_TO_FAIL:
                 logging.error("maximum failed tries achived")
                 remove_beacon(BEACONID)
