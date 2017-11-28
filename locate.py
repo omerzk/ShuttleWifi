@@ -1,4 +1,5 @@
-#encoding=utf8  
+from __future__ import with_statement
+#encoding=utf8
 import requests
 import urllib
 from urlparse import urljoin
@@ -11,6 +12,7 @@ import time
 import sys
 import signal
 import logging
+from WifiConnector import ShuttleWiFiConnector
 
 ### URLS ###
 URL = "https://ms-shuttle-tlv-server.herokuapp.com"
@@ -26,7 +28,7 @@ NAME = "Shuttle Driver"
 BEACONID = "8fc0537f-3fd3-4713-871f-5fa4b1850f97"
 LOCATION_MSGS = ["GGA", "RMC"]
 HEADERS = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-IGNORE = "ignore"
+IGNORE = "ignore" #TODO why?
 VALID_BEACON_STATUS = [set(dict()),set(["name","beaconId"])]
 LOGPATH = "/var/log/gps.log"
 #LOGPATH = r"c:\temp\gps\log.log"
@@ -49,8 +51,8 @@ def sigterm_handler(_signo, _stack_frame):
 def validate_beacon_status(beacon_status_json):
     logging.info("validating beaconStatus message")
     if set(beacon_status_json.keys()) not in VALID_BEACON_STATUS:
-        logging.error("invalid beaconStatus recived")
-        print "Error: recived invalid beaconStatus"
+        logging.error("invalid beaconStatus received")
+        print "Error: received   invalid beaconStatus"
         logging.info("exiting")
         sys.exit(0)
     logging.info("beaconStatus validation succeeded")
@@ -124,7 +126,7 @@ def get_location_msg():
             print "something happend during get_location_msg while loop"
             logging.exception("error in handeling location message")
             #raise
-            
+
 def gps_calibrate():
     while True:
         msg = get_location_msg()    
@@ -136,6 +138,16 @@ def gps_calibrate():
             print "valid location"
             logging.info("got a valid location, gps is calibrated")
             return True
+
+def connect_to_wifi():
+    with ShuttleWiFiConnector() as connector:
+        connected = connector.try_connect_shuttel
+    if not connected:
+        logging.error("No Soofa network not available")
+
+    return connected
+
+
 
 def send_location():
     msg = get_location_msg()
@@ -155,6 +167,7 @@ def send_location():
         r = requests.post(urljoin(URL,SENDPOS), data=json.dumps(data), headers=HEADERS)   
     except:
         logging.exception("error in sending location")
+
     print "return message of send_location: %s, %s" % (r.status if hasattr(r,"status") else "status N.A", r.text)
     logging.info("return message of send_location: %s, %s" % (r.status if hasattr(r,"status") else "status N.A", r.text))
     
@@ -163,6 +176,7 @@ def main():
     signal.signal(signal.SIGTERM, sigterm_handler)
     signal.signal(signal.SIGINT, sigterm_handler)
     
+    connect_to_wifi()
     try: 
         logger = init_logger(LOGPATH)
     except:
@@ -206,6 +220,7 @@ def main():
         except Exception, e:
             print e
             tries += 1
+            connect_to_wifi()
             logging.exception("got exception in main for the %d time" % tries)
             if tries == 4:
                 print "maximum failed tries achived, exiting..."

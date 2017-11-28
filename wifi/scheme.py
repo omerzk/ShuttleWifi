@@ -169,11 +169,10 @@ class Scheme(object):
         Connects to the network as configured in this scheme.
         """
 
-        subprocess.check_output(['/sbin/ifdown', self.interface], stderr=subprocess.STDOUT)
-        ifup_output = subprocess.check_output(['/sbin/ifup'] + self.as_args(), stderr=subprocess.STDOUT)
-        ifup_output = ifup_output.decode('utf-8')
+        subprocess.check_output(['ifdown', self.interface], stderr=subprocess.STDOUT)
+        subprocess.check_output(['ifup'] + self.as_args(), stderr=subprocess.STDOUT)
 
-        return self.parse_ifup_output(ifup_output)
+
 
     def parse_ifup_output(self, output):
         matches = bound_ip_re.search(output)
