@@ -218,25 +218,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-# pdb.set_trace()
-# t = send_location()
-# get status to understand if beacon is available 
-# x = become_beacon(BEACONID, NAME)
-# check if I'm the beacon
-# y = get_status()
-
-
-
-
-# z = remove_beacon(BEACONID)
-# r = requests.post(url, data=json.dumps(dict), headers=headers)
-
-# params = urllib.urlencode()
-# conn.request("POST", "/becomeBeacon")
-# conn.request("GET", "/beaconStatus")
-# r1 = conn.getresponse()
-# print r1.status, r1.reason

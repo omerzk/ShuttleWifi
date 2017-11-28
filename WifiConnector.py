@@ -5,9 +5,9 @@ from wifi import Cell, Scheme
 from pathlib import Path
 import logging
 
-# Paths
-LOGPATH = "/var/log/wifiConnector.log"
-JSON_PATH = "./knowMacToPassword.json"
+# File paths
+LOG_PATH = "/var/log/wifiConnector.log"
+JSON_PATH = "./knowMacToPassword.json"  # Should be checked in
 
 # Wifi config values
 INTERFACE = "wlan0"
@@ -28,6 +28,8 @@ def init_shuttle_logger(logpath):
     return logger
 
 
+''' Checks if the device is connected to the internet'''
+
 def is_connected(logger):
     ping = subprocess.Popen(["ping", GOOGLE_DNS_SERVER_IP, "-c", PING_AMOUNT], stdout=subprocess.PIPE)
 
@@ -39,7 +41,6 @@ def is_connected(logger):
 
 
 """Get strongest signal cell of the requested SSID"""
-
 
 def get_best_cell(ssid, logger):
     cells = Cell.where(INTERFACE, lambda cell: cell is not None and cell.ssid == ssid)
@@ -60,7 +61,7 @@ class ShuttleWiFiConnector:
         else:
             self.MACToPassword = dict()
 
-        self.logger = init_shuttle_logger(LOGPATH)
+        self.logger = init_shuttle_logger(LOG_PATH)
 
     def __exit__(self):
         with open(JSON_PATH, "w") as jsonfile:
@@ -69,9 +70,8 @@ class ShuttleWiFiConnector:
     def try_connect(self, cell, password):
         schema = Scheme.for_cell(INTERFACE, SHUTTLE_SSID, cell, password)
 
-        self.logger.info("Restarting interface with networks params")
         schema.activate()
-        self.logger.info("Finished Restarting interface with networks params")
+        self.logger.info("Restarted interface with networks params")
 
         sleep(SECONDS_TO_CONNECTION)
         if is_connected():
@@ -83,12 +83,13 @@ class ShuttleWiFiConnector:
     def try_connect_shuttle(self):
         connected = False
         cell = get_best_cell(SHUTTLE_SSID, self.logger)
-        if cell:
-            i = 0
+
+        if not cell:
             # Try to connect from memorized mac
             if cell.address in self.MACToPassword:
                 connected = self.try_connect(cell, self.MACToPassword[cell.address])
 
+            i = 0
             # If not connected try to connect using configured passwords
             while i < len(SHUTTLE_PASSWORDS) and not connected:
                 connected = self.try_connect(cell, SHUTTLE_PASSWORDS[i])
