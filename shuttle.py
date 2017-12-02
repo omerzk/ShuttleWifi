@@ -8,7 +8,7 @@ import sys
 import threading
 
 PYTHON_PATH = "python"
-SHUTTLE_LOCATION_SCRIPT = "/home/pi/locate.py"
+SHUTTLE_LOCATION_SCRIPT = "locate.py"
 SHUTTLE_LOCATION_CMDLINE = r"%s %s" % (PYTHON_PATH, SHUTTLE_LOCATION_SCRIPT)
 
 START_ACTIVITY_HOURS = 0
